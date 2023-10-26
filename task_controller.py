@@ -27,10 +27,16 @@ from pox.lib.packet import ethernet
 #   - Let switches route via Dijkstra
 #   - Match ARP and ICMP over IPv4 packets
 #
-# Task 4: Implementing DNS censorship 
+# Task 4: Implementing simple DNS censorship 
 #   - Let switches send DNS packets to Controller
 #       - By default, switches will send unhandled packets to controller
-#   - Keep routing ARP packets with Dijkstra, and use Fog routing on IPv4 only
+#   - Drop DNS requests for asking cs341dangerous.com, relay all other packets correctly
+#
+# Task 5: Implementing simple HTTP censorship 
+#   - Let switches send HTTP packets to Controller
+#       - By default, switches will send unhandled packets to controller
+#   - Additionally, drop HTTP requests for heading cs341dangerous.com, relay all other packets correctlys
+
 
 ###
 # If you want, you can define global variables, import libraries, or do others
@@ -177,14 +183,25 @@ def handlePacket(switchname, event, connection):
         if isinstance(p, bytes):
             break
         p = p.next
-    #print(packet.dump())
+    print(packet.dump()) # print out unhandled packets
+    # How to know protocol header types? see name of class
+    # print('-->'.join(map(lambda obj:obj.__class__.__name__, packetfrags)))
+
+    # If you want to send packet back to switch, you can use of.ofp_packet_out() message.
+    # Refer to [ofp_packet_out - Sending packets from the switch](https://noxrepo.github.io/pox-doc/html/#ofp-packet-out-sending-packets-from-the-switch)
+    # You may learn from [l2_learning.py](pox/pox/forwarding/l2_learning.py), which implements learning switches
+    msg = of.ofp_packet_out()
+    msg.actions.append(of.ofp_action_output(port = bestport[switchname][str(dstip)]))
+    msg.data = event.ofp
+    msg.in_port = event.port
+    connection.send(msg)
 
     isIPv4 = any(map(lambda obj: obj.__class__.__name__ == 'ipv4', packetfrags))
     isTCP = any(map(lambda obj: obj.__class__.__name__ == 'tcp', packetfrags))
     isDNS = any(map(lambda obj: obj.__class__.__name__ == 'dns', packetfrags))
     includeAttacker = False
     # if any(map(lambda obj: obj.__class__.__name__ == 'dns', packetfrags)):
-    print('-->'.join(map(lambda obj:obj.__class__.__name__, packetfrags)))
+    
     srcip = None
     dstip = None
     
