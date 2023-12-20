@@ -213,7 +213,7 @@ def main():
 
         outputpath = join(submission.path, 'output_{}.txt'.format(submission.id))
 
-        with open(outputpath,'a' if debug else 'w') as f:
+        with open(outputpath,'a' if debug else 'w', encoding='utf-8') as f:
             f.write(total_output)
             print('saved output to {}'.format(outputpath))
         cleanup()
