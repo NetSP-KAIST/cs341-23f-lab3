@@ -44,3 +44,10 @@ $ python3 main.py --idx 5-10 # for running 5,6,7,8,9th submissions only
 For task 1, running single python3 script is enough
 
 For task 2-5, `pox.py` should be opened first, then grading script should be run
+
+## Troubleshooting
+
+### tests only contains `sudo: unable to execute ./grade.py: No such file or directory`
+
+This can happened because of EOL characters; Windows git may replace LF to CRLF, which makes script not executable
+For windows, try downloading file directly rather than git clone
