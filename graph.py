@@ -12,10 +12,10 @@ def gen_graph(task=1):
 
     switchneighbors = {s:set() for s in switches}
 
-    if task in range(1,5): # For task 1, 2, 3, 4
+    if task in range(1,4): # For task 1, 2, 3
         # increase number of switches and hosts to make more complex and bigger network
-        switch=5
-        host=3
+        switch=10
+        host=10
         
         switches = ['s{}'.format(i) for i in range(1, 1+switch)]
         hosts = ['h{}'.format(i) for i in range(1, 1+host)]
@@ -46,8 +46,8 @@ def gen_graph(task=1):
                 random.randint(1 << 15, 1 << 30)
             ))
 
-    if task in range(3,5): # For task 3, 4
-        # For testing Dijkstra and Fog routing,
+    if task == 3: # For task 3
+        # For testing Dijkstra,
         # Add more links between switches, possibly making loop
         for _ in range(switch * 2):
             s1 = random.choice(switches)
@@ -60,10 +60,23 @@ def gen_graph(task=1):
                     s2,
                     random.randint(1 << 15, 1 << 30)
                 ))
-    if task == 5:
-        ## # KAIST CS341 SDN Lab Task 5: Finding bug in the Custom Routing Protocol
+    if task in range(4,6): # For task 4, 5
+        ## # KAIST CS341 SDN Lab Task 4, 5
         #
-        # Add links to connect switches and hosts
-        # hosts should have only one link that is connected to a switch
-        pass
+        # Simple structure: only one switch and lots of hosts
+        switch=1
+        host=10
+        
+        switches = ['s{}'.format(i) for i in range(1, 1+switch)]
+        hosts = ['h{}'.format(i) for i in range(1, 1+host)]
+
+        # Connect hosts to switches
+        for host in hosts:
+            node1 = host
+            node2 = switches[0]
+            links.append((
+                node1,
+                node2,
+                random.randint(1 << 15, 1 << 30)
+            ))
     return (switches, hosts, links)

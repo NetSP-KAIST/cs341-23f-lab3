@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+
+from subprocess import run, Popen, PIPE
+import signal
+from time import sleep
+from os.path import join, isfile
+from os import unlink
+from shutil import copyfile
+import time
+import json
+import logging
+
+ROOT = '/autograder'
+SUBMISSION = join(ROOT, 'submission')
+CONTROLLERPY = 'task_controller.py'
+TOPOLOGYPY = 'task_topology.py'
+RESULTSJSON = 'results/results.json'
+
+TASKTOPOLOGY = False
+TASKCONTROLLER = False
+logging.basicConfig(filename='results/stdout', level=logging.DEBUG)
+
+results = {
+    'score': None,
+    'execution_time': None,
+    'output': None,
+    'visibility': 'visible', # choose one among: hidden / after_due_date / after_published / visible(default)
+    'stdout_visibility': 'visible',
+    'tests': [
+        {
+            'name': 'task_topology.py presence',
+            'status': 'failed',
+            'output': '',
+            'visibility': 'visible'
+        },{
+            'name': 'task_controller.py presence',
+            'status': 'failed',
+            'output': '',
+            'visibility': 'visible'
+        },{
+            'name': 'Task 1',
+            'score': 0,
+            'max_score': 100,
+            'status': 'failed', # 'passed' or 'failed'
+            'output': '',
+            'visibility': 'visible'
+        },{
+            'name': 'Task 3',
+            'score': 0,
+            'max_score': 100,
+            'status': 'failed', # 'passed' or 'failed'
+            'output': '',
+            'visibility': 'visible'
+        },{
+            'name': 'Task 4',
+            'score': 0,
+            'max_score': 100,
+            'status': 'failed', # 'passed' or 'failed'
+            'output': '',
+            'visibility': 'visible'
+        },{
+            'name': 'Task 5',
+            'score': 0,
+            'max_score': 100,
+            'status': 'failed', # 'passed' or 'failed'
+            'output': '',
+            'visibility': 'visible'
+        }
+    ]
+}
+
+# simple wrapper for running command with shell
+class PS:
+    def __init__(self, cmd):
+        # open SSH session for executing command; POX only allows this
+        import paramiko
+        self.ssh = paramiko.SSHClient()
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        key = paramiko.RSAKey.from_private_key_file('/root/.ssh/id_rsa')
+        self.ssh.connect(hostname='localhost', username='root', pkey=key)
+        self.stdin, self.stdout, self.stderr = self.ssh.exec_command('cd /autograder;'+cmd, get_pty=True)
+    def readlines(self):
+        lines = self.stdout.readlines()
+        if len(lines) == 0:
+            print(self.stderr.readlines())
+        return lines
+    def kill(self):
+        # 0 (stop receiving), 1 (stop sending), 2 (stop receiving and sending).
+        self.ssh.close()
+    def wait(self):
+        self.stdout.readlines()
+        self.ssh.close()
+
+def gradeTask(task=1):
+    poxps = None
+    if task > 1:
+        poxps = PS('sudo pox/pox.py misc.controller')
+        sleep(5)
+    gradeps = PS('sudo ./grade.py --task {}'.format(task))
+    output = gradeps.readlines()
+    if poxps:
+        run('sudo pkill -2 -f pox', shell=True)
+        poxps.wait()
+    return output
+
+def cleanup():
+    run('sudo pkill -f pox; sudo pkill ovs-vswit')
+    Popen('sudo mn -c', shell=True)
+    sleep(3)
+    # sometimes this hang
+    run('sudo pkill -2 -f mn')
+    # do it again
+    run('sudo mn -c')
+
+### Enable SSH to localhost
+# Gradescope setup ~/.ssh/authorized_keys file to contain public keys of registered devices
+# To enable SSH to localhost, we should append public key of machine to authorized_keys
+
+# original file does not end with newline character; we should add one
+run('echo -e "\n" >> ~/.ssh/authorized_keys', shell=True)
+
+# append machine's public key to authorized_keys
+run('cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys', shell=True)
+
+teststart = time.time()
+
+## Copy files
+if isfile(join(SUBMISSION, TOPOLOGYPY)):
+    results['tests'][0]['status'] = 'passed'
+    copyfile(join(SUBMISSION, TOPOLOGYPY), join(ROOT, TOPOLOGYPY))
+    TASKTOPOLOGY = True
+if isfile(join(SUBMISSION, CONTROLLERPY)):
+    results['tests'][1]['status'] = 'passed'
+    copyfile(join(SUBMISSION, CONTROLLERPY), join(ROOT, CONTROLLERPY))
+    TASKCONTROLLER = True
+
+if TASKTOPOLOGY:
+    output = gradeTask(1)
+    grade = float(output[-1].strip().split(':')[-1])
+    results['tests'][2]['output'] = ''.join(output)
+    results['tests'][2]['score'] = grade
+    if grade == 25.0:
+        results['tests'][2]['status'] = 'passed'
+
+if TASKTOPOLOGY and TASKCONTROLLER:
+    output = gradeTask(3)
+    grade = float(output[-1].strip().split(':')[-1])
+    results['tests'][3]['output'] = ''.join(output)
+    results['tests'][3]['score'] = grade
+    if grade == 25.0:
+        results['tests'][3]['status'] = 'passed'
+
+    output = gradeTask(4)
+    grade = float(output[-1].strip().split(':')[-1])
+    results['tests'][4]['output'] = ''.join(output)
+    results['tests'][4]['score'] = grade
+    if grade == 25.0:
+        results['tests'][4]['status'] = 'passed'
+
+    output = gradeTask(5)
+    grade = float(output[-1].strip().split(':')[-1])
+    results['tests'][5]['output'] = ''.join(output)
+    results['tests'][5]['score'] = grade
+    if grade == 25.0:
+        results['tests'][5]['status'] = 'passed'
+
+testend = time.time()
+
+results['execution_time'] = int(testend - teststart)
+results['score'] = results['tests'][2]['score'] + results['tests'][3]['score'] + results['tests'][4]['score'] + results['tests'][5]['score']
+
+json.dump(results, open(RESULTSJSON, 'w'))
+
+if isfile(join(ROOT, TOPOLOGYPY)):
+    unlink(join(ROOT, TOPOLOGYPY))
+if isfile(join(ROOT, CONTROLLERPY)):
+    unlink(join(ROOT, CONTROLLERPY))
+
+cleanup()

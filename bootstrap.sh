@@ -1,8 +1,13 @@
-set -ex
-sudo apt-get update; sudo apt-get -y upgrade
-git clone https://github.com/NetSP-KAIST/mininet.git
-./mininet/util/install.sh -nfvp
-ln -s /vagrant/{*.py,*.c,Makefile,client.sh} /home/vagrant/
-ln -s /vagrant/controller.py /home/vagrant/pox/pox/misc/
-cd /home/vagrant/
-make
+cd /autograder/
+
+# Copy run_autograder to /autograder
+cp /autograder/source/run_autograder /autograder/
+
+# run setup.sh
+sudo /autograder/source/setup.sh
+
+# Make results, submission folder look like gradescope autograder
+mkdir /autograder/results
+touch /autograder/results/stdout
+mkdir /autograder/submission
+cp /autograder/task_*.py /autograder/submission/

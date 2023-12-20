@@ -165,31 +165,33 @@ struct Message {
   struct ResourceRecord *additionals;
 };
 
-struct Record {
-  char *domain;
-  char *IP;
-};
+char *ARecords[255];
+int ARecordlen = 0;
+
 int get_A_Record(uint8_t addr[4], const char domain_name[])
 {
-  struct Record ARecords[] = {
-    {"cs341dangerous.com", "10.0.0.1"},
-    {"cs341safe.com", "10.0.0.1"},
-    {"netsp.kaist.ac.kr", "142.251.46.211"},
-  };
-  int len = sizeof(ARecords) / sizeof(struct Record);
-  for(int i=0; i<len; i++) {
-    if (strcmp(ARecords[i].domain, domain_name) == 0) {
-      int IPlen = strlen(ARecords[i].IP);
-      char *IP = (char *)malloc(IPlen + 1);
-      strcpy(IP, ARecords[i].IP);
-      addr[0] = (uint8_t)atoi(strtok(IP, "."));
+  char *record_domain = malloc(255);
+  char *record_IP = malloc(20);
+  for(int i=0; i<ARecordlen; i++) {
+    char *domainip = ARecords[i];
+    char *separator = strchr(domainip, '=');
+    int domainlen = separator - domainip;
+    strncpy(record_domain, domainip, domainlen);
+    record_domain[domainlen] = '\0';
+    int iplen = strlen(domainip) - domainlen - 1;
+    strncpy(record_IP, separator+1, iplen+1);
+    if (strcmp(record_domain, domain_name) == 0) {
+      addr[0] = (uint8_t)atoi(strtok(record_IP, "."));
       for(int j=1; j<4; j++) {
         addr[j] = (uint8_t)atoi(strtok(NULL, "."));
       }
-      free(IP);
+      free(record_domain);
+      free(record_IP);
       return 0;
     }
   }
+  free(record_domain);
+  free(record_IP);
   return -1;
 }
 
@@ -673,12 +675,29 @@ int main(int argc, char* argv[])
   int sock;
   int port = 53;
   int c;
-  while ((c = getopt(argc, argv, "p:")) != -1) {
+  while ((c = getopt(argc, argv, "p:a:h")) != -1) {
     switch(c) {
       case 'p': {
         port = atoi(optarg);
+        break;
+      }
+      case 'a': {
+        char *domainip = malloc(strlen(optarg)+1);
+        strcpy(domainip, optarg);
+        ARecords[ARecordlen] = domainip;
+        ARecordlen++;
+        break;
+      }
+      case 'h': {
+        puts("Usage: ./dns -p <port number> -a domain1.com=1.1.1.1 -a domain2.com=2.2.2.2");
+        return 0;
       }
     }
+  }
+  if(ARecordlen == 0) {
+    puts("No A Record given");
+    puts("Usage: ./dns -p <port number> -a domain1.com=1.1.1.1 -a domain2.com=2.2.2.2");
+    return 0;
   }
   struct Message msg;
   memset(&msg, 0, sizeof(struct Message));

@@ -21,25 +21,31 @@ Vagrant.configure("2") do |config|
     mem = `wmic OS get TotalVisibleMemorySize`.split("\n")[2].to_i / 1024 * mem_ratio
   end
   config.vm.boot_timeout = 1800
-  # Provision the "MiniNetVirtualMachine"
-  config.vm.define :mnvm do |mnvm|
-    mnvm.vm.box = "ubuntu/focal64"
-    mnvm.vm.hostname = "mnvm"
-    mnvm.vm.synced_folder ".", "/vagrant", disabled: false
-    mnvm.ssh.forward_agent = true
-    mnvm.ssh.forward_x11 = true
+  # Provision the "GradeScopeAutoGrader"
+  config.vm.define :gsag do |gsag|
+    gsag.vm.box = "ubuntu/focal64"
+    gsag.vm.hostname = "gsag"
+    gsag.vm.synced_folder ".", "/autograder/source", disabled: false
+    gsag.ssh.forward_agent = true
+    gsag.ssh.forward_x11 = true
 
     if mem < 2048
       puts "Your machine might not have enough memory to run this VM! Talk to the course staff."
     end
 
-    mnvm.vm.provider "virtualbox" do |vb|
+    gsag.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--cpuexecutioncap", 75]
       vb.customize ["modifyvm", :id, "--memory", "2048"]
       vb.customize ["modifyvm", :id, "--cpus", "2"]
     end
-
-    mnvm.vm.provision "shell", path: "bootstrap.sh", privileged: true
+    gsag.vm.provision "shell", inline: <<-'SHELL'
+      sed -i 's/^#* *\(PermitRootLogin\)\(.*\)$/\1 yes/' /etc/ssh/sshd_config
+      sed -i 's/^#* *\(PasswordAuthentication\)\(.*\)$/\1 yes/' /etc/ssh/sshd_config
+      systemctl restart sshd.service
+      echo -e "vagrant\nvagrant" | (passwd vagrant)
+      echo -e "root\nroot" | (passwd root)
+    SHELL
+    gsag.vm.provision "shell", path: "bootstrap.sh", privileged: true
 
   end
 

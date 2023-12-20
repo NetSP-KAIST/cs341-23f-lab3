@@ -10,6 +10,7 @@ class CS341RequestHandler(BaseHTTPRequestHandler):
         client = self.client_address[0]
         host = self.headers.get('Host')
         self.wfile.write('Hello {}, I am {}\n'.format(client,host).encode('utf-8'))
+        print('{}\t{}'.format(client, host))
     def do_POST(self):
         self.do_GET()
 

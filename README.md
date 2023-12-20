@@ -1,15 +1,46 @@
-# Lab 3: Building Your Own Network with SDN
+# Grader for Lab 3: Building Your Own Network with SDN
 
-## Content
+## How to use
 
-- [bootstrap.sh](bootstrap.sh): Setup Mininet and POX controller on VM, making VM via vagrant and virtualbox (called by `vagrant up`)
-- [controller.py](controller.py): POX controller, working as wrapper of `task_controller.py`
-- [dns.c](dns.c): Simple DNS server
-- [dump.py](dump.py): Dumps network topology to `/tmp/net.json`
-- [graph.py](graph.py): Generate random network topology
-- **[task_controller](task_controller.py)**: Compute routing rules, pushing them to switches (Lab 2,3,4,5)
-- **[task_topology.py](task_topology.py)**: Generate Mininet topology from given network structure (Lab 1)
-- [server.py](server.py): Simple HTTP Server
-- [setup.sh](setup.sh): Setup Mininet and POX controller directly on the machine
-- [test.py](test.py): Test implementation of logic, opening Mininet CLI
-- [Vagrantfile](Vagrantfile): Vagrantfile for setup Mininet and POX controller on VM
+### Initial setup
+
+```
+$ vagrant up
+$ pip3 install requirements.txt
+```
+
+### Grading a single submission for debugging
+
+For grading `task_*.py` in the current folder, run
+```
+$ python3 main.py --debug
+```
+This will save `ouput_debug.txt` in the same folder
+
+
+### Grading multiple submissions, downloaded from Gradescope
+
+submissions should be placed at `/assignment_*****_export/submission_*****/`, where metadata is placed at `/assignment_*****_export/submission_metadata.yml`
+
+Run
+```
+$ python3 main.py
+```
+
+for grading all tasks. output file will be written at `/assignment_*****_export/submission_*****/`
+
+For running single or submissions in index range, run
+
+
+```
+$ python3 main.py --idx 3 # for running 3rd submission only
+```
+```
+$ python3 main.py --idx 5-10 # for running 5,6,7,8,9th submissions only
+```
+
+## Grading Task Details
+
+For task 1, running single python3 script is enough
+
+For task 2-5, `pox.py` should be opened first, then grading script should be run
