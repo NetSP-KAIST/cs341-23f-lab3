@@ -1,4 +1,4 @@
-from os import listdir
+from os import listdir, walk
 from subprocess import run
 from os.path import join
 from time import sleep
@@ -88,19 +88,21 @@ class Submission:
         self.submitter = submitter
         self.path = path
         self.wrongFormat = False
-        files = run('ls {} | grep task_'.format(path), shell=True, text=True, capture_output=True).stdout.splitlines()
-        self.files = list(map(lambda fn: join(path, fn), files))
+        taskfiles = filter(lambda fn:fn in ['task_controller.py', 'task_topology.py'], listdir(path))
+        self.files = list(map(lambda fn: join(path, fn), taskfiles))
         if len(self.files) < 2:
-            files = run('find {} -name task_controller.py -o -name task_topology.py'.format(path), shell=True, text=True, capture_output=True).stdout.splitlines()
-            if len(files) > len(self.files):
-                self.files = files
+            taskfiles = []
+            for (root, dirs, files) in walk(path):
+                taskfiles.extend(filter(lambda fn:fn in ['task_controller.py', 'task_topology.py'], files))
+            if len(taskfiles) > len(self.files):
+                self.files = taskfiles
                 self.wrongFormat = True
 
 def get_submissions():
     # find assignment_*****_export folder
-    assignment = run('ls | grep assignment', shell=True, text=True, capture_output=True).stdout.strip()
+    assignment = list(filter(lambda fn: 'assignment' in fn, listdir()))[0]
     submissions = []
-    with open(join(assignment, 'submission_metadata.yml')) as f:
+    with open(join(assignment, 'submission_metadata.yml'), encoding='utf-8') as f:
         metadata = yaml.load(f, Loader=yaml.FullLoader)
         for submissionID in sorted(metadata.keys()):
             submitters = metadata[submissionID][':submitters']
