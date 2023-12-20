@@ -45,7 +45,7 @@ Vagrant.configure("2") do |config|
       echo -e "vagrant\nvagrant" | (passwd vagrant)
       echo -e "root\nroot" | (passwd root)
     SHELL
-    gsag.vm.provision "shell", path: "bootstrap.sh", privileged: true
+    gsag.vm.provision "shell", path: "setup.sh", privileged: true
 
   end
 

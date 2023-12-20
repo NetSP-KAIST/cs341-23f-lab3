@@ -6,6 +6,7 @@ cp /autograder/source/*.c /autograder/
 cp /autograder/source/Makefile /autograder/
 cp /autograder/source/*.sh /autograder/
 cd /autograder/
+mkdir /autograder/submission/
 
 ## Install Mininet and dependencies
 #set -ex
@@ -15,7 +16,7 @@ git clone https://github.com/NetSP-KAIST/mininet.git
 ./mininet/util/install.sh -nfvp
 ln -s ../../../controller.py pox/pox/misc/
 make
-pip3 install scapy paramiko
+pip3 install scapy
 
 ## Enable SSH to localhost
 ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa

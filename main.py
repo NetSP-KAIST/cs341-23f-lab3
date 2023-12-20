@@ -130,7 +130,7 @@ def main():
         # do same grading 10 times
         # upload task_*.py in the same folder
         idx = 0
-        submissions = [Submission('debug', 'debug', '')]
+        submissions = [Submission('debug', 'debug', './')]
     else:
         submissions = get_submissions()
     idx = args.idx
