@@ -6,7 +6,7 @@
 
 ```
 $ vagrant up
-$ pip3 install requirements.txt
+$ pip3 install -r requirements.txt
 ```
 
 ### Grading a single submission for debugging
